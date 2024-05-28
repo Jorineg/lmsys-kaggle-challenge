@@ -24,6 +24,8 @@ model_str = "microsoft/phi-2"
 # model_str = "facebook/galactica-125m"
 run_number = 1
 
+run_name = f"{model_str.replace("/","-")}{run_number}"
+
 os.environ["WANDB_PROJECT"] = "llm-human-preference"
 
 model = AutoModelForSequenceClassification.from_pretrained(
@@ -41,13 +43,13 @@ tokenizer.add_special_tokens(
 )  # add pad token to tokenizer for padding
 dataset = load_dataset("lmsys/lmsys-arena-human-preference-55k")
 
-max_length = 800
-batch_size = 2
+max_length = 1000
+batch_size = 4
 
 # split dataset
 dataset = dataset["train"]
 # use small subset for testing
-# dataset = dataset.select(range(8000))
+dataset = dataset.select(range(8000))
 dataset = dataset.train_test_split(test_size=0.1)
 
 
@@ -160,7 +162,7 @@ training_args = TrainingArguments(
     logging_dir="./logs",
     logging_steps=5,
     report_to="wandb",
-    run_name=f"{model_str}{run_number}",
+    run_name=run_name,
     gradient_accumulation_steps=1,
     evaluation_strategy="steps",
     eval_steps=20,  # evaluate every 50 steps
