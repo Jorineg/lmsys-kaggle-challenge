@@ -60,6 +60,22 @@ dataset = dataset.select(range(8000))
 dataset = dataset.train_test_split(test_size=0.1)
 
 
+def apply_template(prompts, responses_a, responses_b):
+    conversation_1 = "".join(
+        [
+            f"<user>{prompt}<model>{response}"
+            for prompt, response in zip(prompts, responses_a)
+        ]
+    )
+    conversation_2 = "".join(
+        [
+            f"<user>{prompt}<model>{response}"
+            for prompt, response in zip(prompts, responses_b)
+        ]
+    )
+    return f"Rate who is better(1/2/tie)\n<Model 1>\n{conversation_1}\n\n<Model 2>\n{conversation_2}\n\nThe winner is"
+
+
 def preprocess_function(examples):
     model_inputs = []
     labels = []
@@ -77,19 +93,7 @@ def preprocess_function(examples):
             winner_model_a,
             winner_model_b,
         ) = example
-        conversation_1 = "".join(
-            [
-                f"<user>{prompt}<model>{response}"
-                for prompt, response in zip(prompts, responses_a)
-            ]
-        )
-        conversation_2 = "".join(
-            [
-                f"<user>{prompt}<model>{response}"
-                for prompt, response in zip(prompts, responses_b)
-            ]
-        )
-        model_input = f"Rate who is better(1/2/tie)\n<Model 1>\n{conversation_1}\n\n<Model 2>\n{conversation_2}\n\nThe winner is"
+        model_input = apply_template(prompts, responses_a, responses_b)
         tokens = tokenizer(
             model_input, padding="max_length", truncation=False, max_length=max_length
         )
@@ -111,22 +115,7 @@ def filter_function(example):
     prompts = example["prompt"]
     responses_a = example["response_a"]
     responses_b = example["response_b"]
-    conversation_1 = "".join(
-        [
-            f"<user>{prompt}<model>{response}"
-            for prompt, response in zip(prompts, responses_a)
-        ]
-    )
-    conversation_2 = "".join(
-        [
-            f"<user>{prompt}<model>{response}"
-            for prompt, response in zip(prompts, responses_b)
-        ]
-    )
-    model_inputs = (
-        f"<CONVERSATION 1>\n{conversation_1}\n\n<CONVERSATION 2>\n{conversation_2}"
-    )
-
+    model_inputs = apply_template(prompts, responses_a, responses_b)
     tokens = tokenizer(model_inputs, padding=True, truncation=False)
     return len(tokens["input_ids"]) <= max_length
 
