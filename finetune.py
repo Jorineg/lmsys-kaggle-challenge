@@ -18,8 +18,8 @@ import numpy as np
 import wandb
 import os
 
-# model_str = "microsoft/Phi-3-mini-4k-instruct"
-model_str = "facebook/galactica-125m"
+model_str = "microsoft/Phi-3-mini-4k-instruct"
+# model_str = "facebook/galactica-125m"
 run_number = 1
 
 os.environ["WANDB_PROJECT"] = "llm-human-preference"
@@ -39,8 +39,8 @@ tokenizer.add_special_tokens(
 )  # add pad token to tokenizer for padding
 dataset = load_dataset("lmsys/lmsys-arena-human-preference-55k")
 
-max_length = 1000
-batch_size = 48
+max_length = 800
+batch_size = 2
 
 # split dataset
 dataset = dataset["train"]
@@ -78,9 +78,7 @@ def preprocess_function(examples):
                 for prompt, response in zip(prompts, responses_b)
             ]
         )
-        model_input = (
-            f"<CONVERSATION 1>\n{conversation_1}\n\n<CONVERSATION 2>\n{conversation_2}"
-        )
+        model_input = f"Rate who is better(1/2/tie)\n<Model 1>\n{conversation_1}\n\n<Model 2>\n{conversation_2}\n\nThe winner is"
         tokens = tokenizer(
             model_input, padding="max_length", truncation=False, max_length=max_length
         )
@@ -152,11 +150,11 @@ def compute_log_loss(pred: EvalPrediction):
 
 training_args = TrainingArguments(
     output_dir="./results",
-    num_train_epochs=2,
+    num_train_epochs=1,
     per_device_train_batch_size=batch_size,
     per_device_eval_batch_size=batch_size,
     warmup_steps=0,
-    weight_decay=0.01,
+    weight_decay=0.001,
     logging_dir="./logs",
     logging_steps=5,
     report_to="wandb",
