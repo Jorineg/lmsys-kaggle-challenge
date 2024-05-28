@@ -42,7 +42,7 @@ tokenizer.add_special_tokens(
 )  # add pad token to tokenizer for padding
 dataset = load_dataset("lmsys/lmsys-arena-human-preference-55k")
 
-max_length = 2000
+max_length = 1000
 
 # split dataset
 dataset = dataset["train"]
