@@ -5,6 +5,7 @@
 
 from transformers import (
     AutoModelForSequenceClassification,
+    AutoModelForCausalLM,
     TrainingArguments,
     Trainer,
     AutoTokenizer,
@@ -28,12 +29,12 @@ run_name = f"{model_str.replace('/','-')}{run_number}"
 
 os.environ["WANDB_PROJECT"] = "llm-human-preference"
 
-model = AutoModelForSequenceClassification.from_pretrained(
+model = AutoModelForCausalLM.from_pretrained(
     model_str,
     device_map="cuda",
     torch_dtype=torch.bfloat16,
     trust_remote_code=True,
-    num_labels=3,
+    # num_labels=3,
 )
 tokenizer = AutoTokenizer.from_pretrained(model_str)
 
@@ -56,11 +57,11 @@ batch_size = 12
 # split dataset
 dataset = dataset["train"]
 # use small subset for testing
-dataset = dataset.select(range(16000))
+dataset = dataset.select(range(6000))
 dataset = dataset.train_test_split(test_size=0.1)
 
 
-def apply_template(prompts, responses_a, responses_b):
+def apply_template(prompts, responses_a, responses_b, label=None):
     conversation_1 = "".join(
         [
             f"<user>{prompt}<model>{response}"
@@ -73,7 +74,15 @@ def apply_template(prompts, responses_a, responses_b):
             for prompt, response in zip(prompts, responses_b)
         ]
     )
-    return f"What Model is better?\n<Model 1>\n{conversation_1}\n\n<Model 2>\n{conversation_2}\n\nPossible options: 1, 2, tie\nThe winner is"
+    if label is None:
+        label = ""
+    else:
+        label = {
+            0: " 1",
+            1: " 2",
+            2: " tie",
+        }[label]
+    return f"What Model is better?\n<Model 1>\n{conversation_1}\n\n<Model 2>\n{conversation_2}\n\nPossible options: 1, 2, tie\nThe winner is:{label}"
 
 
 def preprocess_function(examples):
@@ -93,12 +102,12 @@ def preprocess_function(examples):
             winner_model_a,
             winner_model_b,
         ) = example
-        model_input = apply_template(prompts, responses_a, responses_b)
+        label = 0 if winner_model_a else 1 if winner_model_b else 2
+        model_input = apply_template(prompts, responses_a, responses_b, label)
         tokens = tokenizer(
             model_input, padding="max_length", truncation=False, max_length=max_length
         )
         model_inputs.append(tokens)
-        label = 0 if winner_model_a else 1 if winner_model_b else 2
         labels.append(label)
 
     # Convert lists of dictionaries to a dictionary of lists
@@ -115,7 +124,8 @@ def filter_function(example):
     prompts = example["prompt"]
     responses_a = example["response_a"]
     responses_b = example["response_b"]
-    model_inputs = apply_template(prompts, responses_a, responses_b)
+    label = 0 if example["winner_model_a"] else 1 if example["winner_model_b"] else 2
+    model_inputs = apply_template(prompts, responses_a, responses_b, label)
     tokens = tokenizer(model_inputs, padding=True, truncation=False)
     return len(tokens["input_ids"]) <= max_length
 
@@ -136,6 +146,9 @@ class LogLossCallback(TrainerCallback):
 
 
 def compute_log_loss(pred: EvalPrediction):
+    # use the logits of the tokens for " 1", " 2" and " tie"
+    # compute probabilities for each token with softmax (not all but just those three)
+    # compute log loss from these probabilities
     logits, labels = pred
     # Ensure logits are probabilities
     probabilities = torch.softmax(torch.tensor(logits), dim=-1).numpy()
@@ -156,12 +169,12 @@ training_args = TrainingArguments(
     warmup_steps=20,
     weight_decay=0.002,
     logging_dir="./logs",
-    logging_steps=5,
+    logging_steps=1,
     report_to="wandb",
     run_name=run_name,
-    gradient_accumulation_steps=5,
+    gradient_accumulation_steps=2,
     evaluation_strategy="steps",
-    eval_steps=20,  # evaluate every 50 steps
+    eval_steps=10,  # evaluate every 50 steps
     save_steps=200000,  # save checkpoint every 50 steps
     save_total_limit=2,  # limit number of total saved checkpoints
     learning_rate=3e-5,
