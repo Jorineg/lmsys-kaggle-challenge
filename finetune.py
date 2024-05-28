@@ -179,8 +179,24 @@ training_args = TrainingArguments(
     max_grad_norm=5.0,
 )
 
+
+class CustomTrainer(Trainer):
+    def compute_loss(self, model, inputs, return_outputs=False):
+        labels = inputs.pop("labels")
+        outputs = model(**inputs)
+        logits = outputs.logits
+        # Adding debug statements
+        print(f"Logits shape: {logits.shape}")  # Check the shape of the logits
+        print(f"Labels shape: {labels.shape}")  # Check the shape of the labels
+
+        # Assuming logits and labels should be of form (batch_size, num_labels). Adjust if needed
+        loss_fct = torch.nn.CrossEntropyLoss()
+        loss = loss_fct(logits.view(-1, model.config.vocab_size), labels.view(-1))
+        return (loss, outputs) if return_outputs else loss
+
+
 # Adding the callback to the Trainer
-trainer = Trainer(
+trainer = CustomTrainer(
     model=model,
     args=training_args,
     train_dataset=dataset["train"],
