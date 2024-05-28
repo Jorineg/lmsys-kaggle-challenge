@@ -183,7 +183,7 @@ training_args = TrainingArguments(
 class CustomTrainer(Trainer):
     def compute_loss(self, model, inputs, return_outputs=False):
         labels = inputs.pop("labels")
-        outputs = model(**inputs, max_length=max_length + 1)
+        outputs = model.generate(**inputs, max_length=max_length + 1)
         logits = outputs.logits
 
         logits = logits[:, -1, :]
