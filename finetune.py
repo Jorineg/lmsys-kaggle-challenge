@@ -90,7 +90,7 @@ def preprocess_function(examples):
             model_input, padding="max_length", truncation=False, max_length=max_length
         )
         model_inputs.append(tokens)
-        labels.append([winner_model_a, winner_model_b, winner_tie])
+        labels.append(torch.tensor([winner_model_a, winner_model_b, winner_tie]))
 
     # Convert lists of dictionaries to a dictionary of lists
     input_ids = [x["input_ids"] for x in model_inputs]
