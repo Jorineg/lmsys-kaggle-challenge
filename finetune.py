@@ -27,7 +27,7 @@ os.environ["WANDB_PROJECT"] = "llm-human-preference"
 model = AutoModelForSequenceClassification.from_pretrained(
     model_str,
     device_map="cuda",
-    torch_dtype=torch.float16,
+    torch_dtype=torch.bfloat16,
     trust_remote_code=True,
     num_labels=3,
 )
@@ -35,12 +35,6 @@ tokenizer = AutoTokenizer.from_pretrained(model_str)
 tokenizer.add_special_tokens(
     {
         "pad_token": "<pad>",
-        # "additional_special_tokens": [
-        #     "<user>",
-        #     "<model>",
-        #     "<CONVERSATION 1>",
-        #     "<CONVERSATION 2>",
-        # ],
     }
 )  # add pad token to tokenizer for padding
 dataset = load_dataset("lmsys/lmsys-arena-human-preference-55k")
@@ -51,7 +45,7 @@ batch_size = 48
 # split dataset
 dataset = dataset["train"]
 # use small subset for testing
-dataset = dataset.select(range(2000))
+dataset = dataset.select(range(8000))
 dataset = dataset.train_test_split(test_size=0.1)
 
 
@@ -64,7 +58,6 @@ def preprocess_function(examples):
         examples["response_b"],
         examples["winner_model_a"],
         examples["winner_model_b"],
-        examples["winner_tie"],
     ):
         (
             prompts,
@@ -72,7 +65,6 @@ def preprocess_function(examples):
             responses_b,
             winner_model_a,
             winner_model_b,
-            winner_tie,
         ) = example
         conversation_1 = "".join(
             [
@@ -134,25 +126,8 @@ filtered_dataset = dataset.filter(filter_function)
 
 # Preprocess the filtered dataset
 dataset = filtered_dataset.map(preprocess_function, batched=True, batch_size=batch_size)
-
-dataset.set_format(type="python")
-print(dataset["train"][0])  # Print first sample to inspect
-
 dataset.set_format(type="torch", columns=["input_ids", "attention_mask", "labels"])
 
-
-def model_forward(input_dict, model, labels):
-    if 'token_type_ids' in input_dict:
-        del input_dict['token_type_ids']
-    return model(**input_dict, labels=labels)
-# A sample forward pass to test GPU usage and compatibility
-inputs = tokenizer("Hello, how are you?", return_tensors="pt").to("cuda")
-labels = torch.tensor([1]).unsqueeze(0).to("cuda")
-outputs = model_forward(inputs, model, labels)
-loss = outputs.loss
-loss.backward()
-
-print(loss.item())
 
 class LogLossCallback(TrainerCallback):
     def on_evaluate(
