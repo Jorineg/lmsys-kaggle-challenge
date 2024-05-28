@@ -141,16 +141,18 @@ print(dataset["train"][0])  # Print first sample to inspect
 dataset.set_format(type="torch", columns=["input_ids", "attention_mask", "labels"])
 
 
-print("FIND GPU")
-print(f"CUDA Available: {torch.cuda.is_available()}")
-print(f"Using device: {next(model.parameters()).device}")
+def model_forward(input_dict, model, labels):
+    if 'token_type_ids' in input_dict:
+        del input_dict['token_type_ids']
+    return model(**input_dict, labels=labels)
+# A sample forward pass to test GPU usage and compatibility
 inputs = tokenizer("Hello, how are you?", return_tensors="pt").to("cuda")
 labels = torch.tensor([1]).unsqueeze(0).to("cuda")
-outputs = model(**inputs, labels=labels)
+outputs = model_forward(inputs, model, labels)
 loss = outputs.loss
 loss.backward()
-print(loss.item())
 
+print(loss.item())
 
 class LogLossCallback(TrainerCallback):
     def on_evaluate(
