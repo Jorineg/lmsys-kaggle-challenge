@@ -18,7 +18,9 @@ import numpy as np
 import wandb
 import os
 
-model_str = "microsoft/Phi-3-mini-4k-instruct"
+
+model_str = "microsoft/phi-2"
+# model_str = "microsoft/Phi-3-mini-4k-instruct"
 # model_str = "facebook/galactica-125m"
 run_number = 1
 

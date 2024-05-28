@@ -1,5 +1,5 @@
-wandb
-transformers
-datasets==
+wandb==0.17.0
+transformers==4.41.1
+datasets==2.19.1
 accelerate==0.30.1
 scikit-learn==1.5.0
