@@ -52,7 +52,7 @@ model.config.pad_token_id = tokenizer.pad_token_id
 dataset = load_dataset("lmsys/lmsys-arena-human-preference-55k")
 
 max_length = 1000
-batch_size = 10
+batch_size = 8
 
 # split dataset
 dataset = dataset["train"]
@@ -170,7 +170,7 @@ training_args = TrainingArguments(
     logging_steps=1,
     report_to="wandb",
     run_name=run_name,
-    gradient_accumulation_steps=2,
+    gradient_accumulation_steps=3,
     evaluation_strategy="steps",
     eval_steps=10,
     save_steps=200000,
@@ -194,7 +194,7 @@ class CustomTrainer(Trainer):
 
         # Assuming logits and labels should be of form (batch_size, num_labels). Adjust if needed
         loss_fct = torch.nn.CrossEntropyLoss()
-        loss = loss_fct(logits, labels.view(-1))
+        loss = loss_fct(logits.float(), labels.long())
         return (loss, outputs) if return_outputs else loss
 
 
