@@ -52,7 +52,7 @@ model.config.pad_token_id = tokenizer.pad_token_id
 dataset = load_dataset("lmsys/lmsys-arena-human-preference-55k")
 
 max_length = 1000
-batch_size = 12
+batch_size = 10
 
 # split dataset
 dataset = dataset["train"]
