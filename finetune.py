@@ -51,12 +51,12 @@ model.config.pad_token_id = tokenizer.pad_token_id
 dataset = load_dataset("lmsys/lmsys-arena-human-preference-55k")
 
 max_length = 1000
-batch_size = 8
+batch_size = 12
 
 # split dataset
 dataset = dataset["train"]
 # use small subset for testing
-dataset = dataset.select(range(8000))
+dataset = dataset.select(range(16000))
 dataset = dataset.train_test_split(test_size=0.1)
 
 
@@ -164,8 +164,8 @@ training_args = TrainingArguments(
     eval_steps=20,  # evaluate every 50 steps
     save_steps=200000,  # save checkpoint every 50 steps
     save_total_limit=2,  # limit number of total saved checkpoints
-    learning_rate=1e-5,
-    max_grad_norm=1.0,
+    learning_rate=3e-5,
+    max_grad_norm=5.0,
 )
 
 # Adding the callback to the Trainer
