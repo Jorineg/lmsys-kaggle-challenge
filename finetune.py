@@ -26,7 +26,7 @@ model = AutoModelForSequenceClassification.from_pretrained(
     device_map="cuda",
     torch_dtype="auto",
     trust_remote_code=True,
-    num_labels=2,
+    num_labels=3,
 )
 tokenizer = AutoTokenizer.from_pretrained(model_str)
 tokenizer.add_special_tokens(
@@ -90,7 +90,8 @@ def preprocess_function(examples):
             model_input, padding="max_length", truncation=False, max_length=max_length
         )
         model_inputs.append(tokens)
-        labels.append(torch.tensor([winner_model_a, winner_model_b, winner_tie]))
+        label = 0 if winner_model_a else 1 if winner_model_b else 2
+        labels.append(label)
 
     # Convert lists of dictionaries to a dictionary of lists
     input_ids = [x["input_ids"] for x in model_inputs]
@@ -153,13 +154,9 @@ def compute_log_loss(eval_pred):
     # Ensure logits are probabilities
     probabilities = torch.softmax(torch.tensor(logits), dim=-1).numpy()
 
-    # Add tie probability
-    tie_prob = 1 - np.sum(probabilities, axis=1, keepdims=True)
-    probabilities = np.hstack((probabilities, tie_prob))
-
     # Clip probabilities to avoid log(0)
-    # epsilon = 1e-15
-    # probabilities = np.clip(probabilities, epsilon, 1 - epsilon)
+    epsilon = 1e-15
+    probabilities = np.clip(probabilities, epsilon, 1 - epsilon)
 
     # Compute log loss
     log_loss = -np.sum(labels * np.log(probabilities)) / len(labels)
