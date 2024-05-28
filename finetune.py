@@ -131,7 +131,7 @@ dataset.set_format(type="torch", columns=["input_ids", "attention_mask", "labels
 
 class LogLossCallback(TrainerCallback):
     def on_evaluate(
-        self, args: TrainingArguments, state: TrainerState, control, metrics
+        self, args: TrainingArguments, state: TrainerState, control, metrics, **kwargs
     ):
         if state.is_local_process_zero:
             wandb.log({"val_loss": metrics["eval_loss"]})
