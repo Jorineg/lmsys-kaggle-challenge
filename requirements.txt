@@ -1,0 +1,4 @@
+wandb
+transformers
+datasets==
+accelerate==0.30.1

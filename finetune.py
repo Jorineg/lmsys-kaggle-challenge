@@ -32,12 +32,12 @@ tokenizer = AutoTokenizer.from_pretrained(model_str)
 tokenizer.add_special_tokens(
     {
         "pad_token": "<pad>",
-        "additional_special_tokens": [
-            "<user>",
-            "<model>",
-            "<CONVERSATION 1>",
-            "<CONVERSATION 2>",
-        ],
+        # "additional_special_tokens": [
+        #     "<user>",
+        #     "<model>",
+        #     "<CONVERSATION 1>",
+        #     "<CONVERSATION 2>",
+        # ],
     }
 )  # add pad token to tokenizer for padding
 dataset = load_dataset("lmsys/lmsys-arena-human-preference-55k")
