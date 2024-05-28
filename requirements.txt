@@ -2,3 +2,4 @@ wandb
 transformers
 datasets==
 accelerate==0.30.1
+scikit-learn==1.5.0

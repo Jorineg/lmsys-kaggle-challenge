@@ -51,7 +51,7 @@ batch_size = 48
 # split dataset
 dataset = dataset["train"]
 # use small subset for testing
-# dataset = dataset.select(range(1000))
+dataset = dataset.select(range(2000))
 dataset = dataset.train_test_split(test_size=0.1)
 
 
@@ -134,7 +134,22 @@ filtered_dataset = dataset.filter(filter_function)
 
 # Preprocess the filtered dataset
 dataset = filtered_dataset.map(preprocess_function, batched=True, batch_size=batch_size)
+
+dataset.set_format(type="python")
+print(dataset["train"][0])  # Print first sample to inspect
+
 dataset.set_format(type="torch", columns=["input_ids", "attention_mask", "labels"])
+
+
+print("FIND GPU")
+print(f"CUDA Available: {torch.cuda.is_available()}")
+print(f"Using device: {next(model.parameters()).device}")
+inputs = tokenizer("Hello, how are you?", return_tensors="pt").to("cuda")
+labels = torch.tensor([1]).unsqueeze(0).to("cuda")
+outputs = model(**inputs, labels=labels)
+loss = outputs.loss
+loss.backward()
+print(loss.item())
 
 
 class LogLossCallback(TrainerCallback):
@@ -163,7 +178,7 @@ training_args = TrainingArguments(
     num_train_epochs=1,
     per_device_train_batch_size=batch_size,
     per_device_eval_batch_size=batch_size,
-    warmup_steps=500,
+    warmup_steps=0,
     weight_decay=0.01,
     logging_dir="./logs",
     logging_steps=5,
@@ -174,6 +189,8 @@ training_args = TrainingArguments(
     eval_steps=20,  # evaluate every 50 steps
     save_steps=20,  # save checkpoint every 50 steps
     save_total_limit=2,  # limit number of total saved checkpoints
+    learning_rate=5e-5,
+    max_grad_norm=1.0,
 )
 
 # Adding the callback to the Trainer
