@@ -95,27 +95,26 @@ def preprocess_function(examples):
         examples["winner_model_a"],
         examples["winner_model_b"],
     ):
-        (
-            prompts,
-            responses_a,
-            responses_b,
-            winner_model_a,
-            winner_model_b,
-        ) = example
+        (prompts, responses_a, responses_b, winner_model_a, winner_model_b) = example
         label = 0 if winner_model_a else 1 if winner_model_b else 2
         model_input = apply_template(prompts, responses_a, responses_b, label)
         tokens = tokenizer(
-            model_input, padding="max_length", truncation=False, max_length=max_length
+            model_input,
+            padding="max_length",
+            truncation=False,
+            max_length=max_length,
+            return_tensors="pt",
         )
+        tokens = {key: val.squeeze(0) for key, val in tokens.items()}
         model_inputs.append(tokens)
         labels.append(label)
-
-    # Convert lists of dictionaries to a dictionary of lists
-    input_ids = [x["input_ids"] for x in model_inputs]
-    attention_mask = [x["attention_mask"] for x in model_inputs]
-
-    # Ensure the output structure is correct
-    batch = {"input_ids": input_ids, "attention_mask": attention_mask, "labels": labels}
+    input_ids = torch.stack([x["input_ids"] for x in model_inputs])
+    attention_mask = torch.stack([x["attention_mask"] for x in model_inputs])
+    batch = {
+        "input_ids": input_ids,
+        "attention_mask": attention_mask,
+        "labels": torch.tensor(labels),
+    }
     return batch
 
 
@@ -155,7 +154,6 @@ def compute_log_loss(pred: EvalPrediction):
     # Clip probabilities to avoid log(0)
     epsilon = 1e-15
     probabilities = np.clip(probabilities, epsilon, 1 - epsilon)
-    # Compute log loss
     return {"eval_loss": log_loss(labels, probabilities)}
 
 
@@ -174,9 +172,9 @@ training_args = TrainingArguments(
     run_name=run_name,
     gradient_accumulation_steps=2,
     evaluation_strategy="steps",
-    eval_steps=10,  # evaluate every 50 steps
-    save_steps=200000,  # save checkpoint every 50 steps
-    save_total_limit=2,  # limit number of total saved checkpoints
+    eval_steps=10,
+    save_steps=200000,
+    save_total_limit=2,
     learning_rate=3e-5,
     max_grad_norm=5.0,
 )
