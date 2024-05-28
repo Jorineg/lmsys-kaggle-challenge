@@ -135,7 +135,7 @@ dataset.set_format(type="torch", columns=["input_ids", "attention_mask", "labels
 training_args = TrainingArguments(
     output_dir="./results",
     num_train_epochs=1,
-    per_device_train_batch_size=batch_size
+    per_device_train_batch_size=batch_size,
     per_device_eval_batch_size=batch_size,
     warmup_steps=500,
     weight_decay=0.01,
