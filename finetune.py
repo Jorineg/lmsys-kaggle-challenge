@@ -43,6 +43,7 @@ tokenizer.add_special_tokens(
 dataset = load_dataset("lmsys/lmsys-arena-human-preference-55k")
 
 max_length = 1000
+batch_size = 24
 
 # split dataset
 dataset = dataset["train"]
@@ -128,14 +129,14 @@ def filter_function(example):
 filtered_dataset = dataset.filter(filter_function)
 
 # Preprocess the filtered dataset
-dataset = filtered_dataset.map(preprocess_function, batched=True)
+dataset = filtered_dataset.map(preprocess_function, batched=True, batch_size=batch_size)
 dataset.set_format(type="torch", columns=["input_ids", "attention_mask", "labels"])
 
 training_args = TrainingArguments(
     output_dir="./results",
     num_train_epochs=1,
-    per_device_train_batch_size=24,
-    per_device_eval_batch_size=24,
+    per_device_train_batch_size=batch_size
+    per_device_eval_batch_size=batch_size,
     warmup_steps=500,
     weight_decay=0.01,
     logging_dir="./logs",
