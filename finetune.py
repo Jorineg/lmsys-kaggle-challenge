@@ -24,7 +24,7 @@ model_str = "microsoft/phi-2"
 # model_str = "facebook/galactica-125m"
 run_number = 1
 
-run_name = f"{model_str.replace("/","-")}{run_number}"
+run_name = f"{model_str.replace('/','-')}{run_number}"
 
 os.environ["WANDB_PROJECT"] = "llm-human-preference"
 
