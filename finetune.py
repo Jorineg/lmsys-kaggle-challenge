@@ -51,7 +51,7 @@ model.config.pad_token_id = tokenizer.pad_token_id
 dataset = load_dataset("lmsys/lmsys-arena-human-preference-55k")
 
 max_length = 1000
-batch_size = 4
+batch_size = 8
 
 # split dataset
 dataset = dataset["train"]
@@ -154,7 +154,7 @@ training_args = TrainingArguments(
     per_device_train_batch_size=batch_size,
     per_device_eval_batch_size=batch_size,
     warmup_steps=0,
-    weight_decay=0.001,
+    weight_decay=0.002,
     logging_dir="./logs",
     logging_steps=5,
     report_to="wandb",
@@ -164,7 +164,7 @@ training_args = TrainingArguments(
     eval_steps=20,  # evaluate every 50 steps
     save_steps=200000,  # save checkpoint every 50 steps
     save_total_limit=2,  # limit number of total saved checkpoints
-    learning_rate=5e-5,
+    learning_rate=1e-5,
     max_grad_norm=1.0,
 )
 
