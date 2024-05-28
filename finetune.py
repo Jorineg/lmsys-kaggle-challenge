@@ -143,6 +143,7 @@ training_args = TrainingArguments(
     logging_steps=10,
     report_to="wandb",
     run_name=f"{model_str}{run_number}",
+    gradient_accumulation_steps=1,
 )
 
 
