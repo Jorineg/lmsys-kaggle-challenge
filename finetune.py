@@ -46,6 +46,7 @@ model.resize_token_embeddings(len(tokenizer))
 tokenizer.pad_token = (
     tokenizer.pad_token if tokenizer.pad_token else tokenizer.eos_token
 )
+model.config.pad_token_id = tokenizer.pad_token_id
 
 dataset = load_dataset("lmsys/lmsys-arena-human-preference-55k")
 
