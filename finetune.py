@@ -45,7 +45,7 @@ batch_size = 48
 # split dataset
 dataset = dataset["train"]
 # use small subset for testing
-dataset = dataset.select(range(8000))
+# dataset = dataset.select(range(8000))
 dataset = dataset.train_test_split(test_size=0.1)
 
 
@@ -152,7 +152,7 @@ def compute_log_loss(pred: EvalPrediction):
 
 training_args = TrainingArguments(
     output_dir="./results",
-    num_train_epochs=1,
+    num_train_epochs=2,
     per_device_train_batch_size=batch_size,
     per_device_eval_batch_size=batch_size,
     warmup_steps=0,
