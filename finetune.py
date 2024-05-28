@@ -36,11 +36,12 @@ model = AutoModelForSequenceClassification.from_pretrained(
     num_labels=3,
 )
 tokenizer = AutoTokenizer.from_pretrained(model_str)
-tokenizer.add_special_tokens(
-    {
-        "pad_token": "<pad>",
-    }
-)  # add pad token to tokenizer for padding
+# tokenizer.add_special_tokens(
+#     {
+#         "pad_token": "<pad>",
+#     }
+# )  # add pad token to tokenizer for padding
+tokenizer.pad_token = tokenizer.eos_token  # set pad token to eos token for padding
 dataset = load_dataset("lmsys/lmsys-arena-human-preference-55k")
 
 max_length = 1000
