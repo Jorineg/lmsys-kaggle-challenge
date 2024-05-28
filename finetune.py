@@ -185,13 +185,16 @@ class CustomTrainer(Trainer):
         labels = inputs.pop("labels")
         outputs = model(**inputs)
         logits = outputs.logits
-        # Adding debug statements
-        print(f"Logits shape: {logits.shape}")  # Check the shape of the logits
-        print(f"Labels shape: {labels.shape}")  # Check the shape of the labels
+
+        logits = logits[:, -1, :]
+        assert logits.shape[0] == labels.shape[0], "Wrong shapes: %s %s" % (
+            logits.shape,
+            labels.shape,
+        )
 
         # Assuming logits and labels should be of form (batch_size, num_labels). Adjust if needed
         loss_fct = torch.nn.CrossEntropyLoss()
-        loss = loss_fct(logits.view(-1, model.config.vocab_size), labels.view(-1))
+        loss = loss_fct(logits, labels.view(-1))
         return (loss, outputs) if return_outputs else loss
 
 
