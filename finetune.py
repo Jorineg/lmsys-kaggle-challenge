@@ -9,6 +9,9 @@ from transformers import (
     Trainer,
     AutoTokenizer,
 )
+from transformers import TrainerCallback, TrainerState, TrainingArguments
+from transformers.trainer_utils import EvalPrediction
+from sklearn.metrics import log_loss
 from datasets import load_dataset
 import torch
 import numpy as np
@@ -133,6 +136,28 @@ filtered_dataset = dataset.filter(filter_function)
 dataset = filtered_dataset.map(preprocess_function, batched=True, batch_size=batch_size)
 dataset.set_format(type="torch", columns=["input_ids", "attention_mask", "labels"])
 
+
+class LogLossCallback(TrainerCallback):
+    def on_evaluate(
+        self, args: TrainingArguments, state: TrainerState, control, metrics
+    ):
+        if state.is_local_process_zero:
+            wandb.log({"val_loss": metrics["eval_loss"]})
+
+
+def compute_log_loss(pred: EvalPrediction):
+    logits, labels = pred
+    # Ensure logits are probabilities
+    probabilities = torch.softmax(torch.tensor(logits), dim=-1).numpy()
+    # Clip probabilities to avoid log(0)
+    epsilon = 1e-15
+    probabilities = np.clip(probabilities, epsilon, 1 - epsilon)
+    # Compute log loss
+    return {"eval_loss": log_loss(labels, probabilities)}
+
+
+# Update TrainingArguments to use logging_steps and evaluation_strategy
+
 training_args = TrainingArguments(
     output_dir="./results",
     num_train_epochs=1,
@@ -141,34 +166,24 @@ training_args = TrainingArguments(
     warmup_steps=500,
     weight_decay=0.01,
     logging_dir="./logs",
-    logging_steps=10,
+    logging_steps=5,
     report_to="wandb",
     run_name=f"{model_str}{run_number}",
     gradient_accumulation_steps=1,
+    evaluation_strategy="steps",
+    eval_steps=20,  # evaluate every 50 steps
+    save_steps=20,  # save checkpoint every 50 steps
+    save_total_limit=2,  # limit number of total saved checkpoints
 )
 
-
-# use log loss
-def compute_log_loss(eval_pred):
-    logits, labels = eval_pred
-    # Ensure logits are probabilities
-    probabilities = torch.softmax(torch.tensor(logits), dim=-1).numpy()
-
-    # Clip probabilities to avoid log(0)
-    epsilon = 1e-15
-    probabilities = np.clip(probabilities, epsilon, 1 - epsilon)
-
-    # Compute log loss
-    log_loss = -np.sum(labels * np.log(probabilities)) / len(labels)
-    return log_loss
-
-
+# Adding the callback to the Trainer
 trainer = Trainer(
     model=model,
     args=training_args,
     train_dataset=dataset["train"],
     eval_dataset=dataset["test"],
     compute_metrics=compute_log_loss,
+    callbacks=[LogLossCallback],
 )
 
 trainer.train()
