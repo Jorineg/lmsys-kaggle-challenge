@@ -24,7 +24,7 @@ os.environ["WANDB_PROJECT"] = "llm-human-preference"
 model = AutoModelForSequenceClassification.from_pretrained(
     model_str,
     device_map="cuda",
-    torch_dtype="auto",
+    torch_dtype=torch.float16,
     trust_remote_code=True,
     num_labels=3,
 )
@@ -43,12 +43,12 @@ tokenizer.add_special_tokens(
 dataset = load_dataset("lmsys/lmsys-arena-human-preference-55k")
 
 max_length = 1000
-batch_size = 24
+batch_size = 48
 
 # split dataset
 dataset = dataset["train"]
 # use small subset for testing
-dataset = dataset.select(range(1000))
+# dataset = dataset.select(range(1000))
 dataset = dataset.train_test_split(test_size=0.1)
 
 
