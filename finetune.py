@@ -73,7 +73,7 @@ def apply_template(prompts, responses_a, responses_b):
             for prompt, response in zip(prompts, responses_b)
         ]
     )
-    return f"Rate who is better(1/2/tie)\n<Model 1>\n{conversation_1}\n\n<Model 2>\n{conversation_2}\n\nThe winner is"
+    return f"What Model is better?\n<Model 1>\n{conversation_1}\n\n<Model 2>\n{conversation_2}\n\nPossible options: 1, 2, tie\nThe winner is"
 
 
 def preprocess_function(examples):
@@ -153,13 +153,13 @@ training_args = TrainingArguments(
     num_train_epochs=1,
     per_device_train_batch_size=batch_size,
     per_device_eval_batch_size=batch_size,
-    warmup_steps=0,
+    warmup_steps=20,
     weight_decay=0.002,
     logging_dir="./logs",
     logging_steps=5,
     report_to="wandb",
     run_name=run_name,
-    gradient_accumulation_steps=1,
+    gradient_accumulation_steps=5,
     evaluation_strategy="steps",
     eval_steps=20,  # evaluate every 50 steps
     save_steps=200000,  # save checkpoint every 50 steps
